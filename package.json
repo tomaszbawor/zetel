@@ -1,0 +1,34 @@
+{
+  "name": "zetel",
+  "module": "src/main.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "bun run src/main.ts",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "check": "biome check . && bun run typecheck",
+    "typecheck": "tsgo --noEmit",
+    "build": "bun build src/main.ts --outdir dist --target bun",
+    "prepare": "simple-git-hooks"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "bun run check",
+    "commit-msg": "bun commitlint --edit $1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.16",
+    "@commitlint/cli": "^21.0.2",
+    "@commitlint/config-conventional": "^21.0.2",
+    "@types/bun": "latest",
+    "@typescript/native-preview": "^7.0.0-dev.20260421.2",
+    "simple-git-hooks": "^2.13.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@effect/platform-bun": "^4.0.0-beta.77",
+    "effect": "^4.0.0-beta.77"
+  }
+}
