@@ -1,17 +1,39 @@
 name: Build
 
 on:
-  pull_request:
-  push:
+  pull_request_target:
     branches:
       - main
+    types:
+      - labeled
+
+permissions:
+  contents: read
 
 jobs:
   build:
+    if: github.event.label.name == 'run-nix-build'
     runs-on: ubuntu-latest
     steps:
+      - name: Verify owner approval
+        env:
+          TRIGGER_ACTOR: ${{ github.actor }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "$TRIGGER_ACTOR" != "$REPOSITORY_OWNER" ]]; then
+            echo "Only the repository owner can trigger this build by adding the run-nix-build label." >&2
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v22

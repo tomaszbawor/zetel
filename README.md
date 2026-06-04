@@ -42,6 +42,12 @@ To build the Nix package:
 nix build
 ```
 
+## Pull request builds
+
+To run the Nix build for a pull request targeting `master`, the repository owner
+adds the `run-nix-build` label to that PR. The workflow checks out the PR head
+and runs the flake check and package build.
+
 ## Versioning and releases
 
 The app version is defined in `package.json`. The CLI and Nix package both read
