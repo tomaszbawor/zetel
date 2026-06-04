@@ -24,4 +24,22 @@ To format source files:
 bun run format
 ```
 
+To enter the Nix development shell:
+
+```bash
+nix develop
+```
+
+With direnv installed:
+
+```bash
+direnv allow
+```
+
+To build the Nix package:
+
+```bash
+nix build
+```
+
 This project was created using `bun init` in bun v1.3.13. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.

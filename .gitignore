@@ -4,6 +4,8 @@ node_modules
 # output
 out
 dist
+result
+result-*
 *.tgz
 
 # code coverage
@@ -25,6 +27,7 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # caches
 .eslintcache
 .cache
+.direnv
 *.tsbuildinfo
 
 # IntelliJ based IDEs
