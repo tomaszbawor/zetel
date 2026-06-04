@@ -91,13 +91,16 @@ jobs:
         run: |
           set -euo pipefail
 
-          prerelease_flag=""
+          args=(
+            "${{ steps.version.outputs.tag }}"
+            "$ASSET"
+            --verify-tag
+            --title "zetel ${{ steps.version.outputs.tag }}"
+            --notes "Release ${{ steps.version.outputs.tag }}"
+          )
+
           if [[ "${{ inputs.prerelease }}" == "true" ]]; then
-            prerelease_flag="--prerelease"
+            args+=(--prerelease)
           fi
 
-          gh release create "${{ steps.version.outputs.tag }}" "$ASSET" \
-            --target "${{ steps.version.outputs.tag }}" \
-            --title "zetel ${{ steps.version.outputs.tag }}" \
-            --notes "Release ${{ steps.version.outputs.tag }}" \
-            $prerelease_flag
+          gh release create "${args[@]}"
