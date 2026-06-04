@@ -18,6 +18,19 @@ To check the project:
 bun run check
 ```
 
+To use the Effect tsgo language service, point your editor at:
+
+```bash
+bun run effect-lsp:path
+```
+
+If your editor uses `@typescript/native-preview` automatically, patch its local
+`tsgo` binary after installing dependencies:
+
+```bash
+bun run effect-lsp:patch
+```
+
 To format source files:
 
 ```bash

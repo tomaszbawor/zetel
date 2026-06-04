@@ -8,6 +8,13 @@
     "jsx": "react-jsx",
     "allowJs": true,
     "types": ["bun"],
+    "plugins": [
+      {
+        "name": "@effect/language-service",
+        "diagnosticSeverity": {},
+        "ignoreEffectSuggestionsInTscExitCode": true
+      }
+    ],
 
     // Bundler mode
     "moduleResolution": "bundler",

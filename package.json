@@ -9,8 +9,10 @@
     "lint": "biome lint .",
     "format": "biome format --write .",
     "check": "biome check . && bun run typecheck",
-    "typecheck": "tsgo --noEmit",
+    "typecheck": "sh -c 'exe=\"$(effect-tsgo get-exe-path)\" && chmod +x \"$exe\" && \"$exe\" --noEmit'",
     "build": "bun build src/main.ts --outdir dist --target bun",
+    "effect-lsp:path": "effect-tsgo get-exe-path",
+    "effect-lsp:patch": "effect-tsgo patch",
     "prepare": "simple-git-hooks"
   },
   "simple-git-hooks": {
@@ -21,6 +23,7 @@
     "@biomejs/biome": "^2.4.16",
     "@commitlint/cli": "^21.0.2",
     "@commitlint/config-conventional": "^21.0.2",
+    "@effect/tsgo": "^0.13.2",
     "@types/bun": "latest",
     "@typescript/native-preview": "^7.0.0-dev.20260421.2",
     "simple-git-hooks": "^2.13.1"
