@@ -21,17 +21,21 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
-  release:
+  prepare:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v22
 
       - name: Bump version
         id: version
@@ -39,10 +43,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          old_version="$(nix eval --raw .#packages.x86_64-linux.default.version)"
           npm version "${{ inputs.increment }}" --no-git-tag-version
-          new_version="$(nix eval --raw .#packages.x86_64-linux.default.version)"
-
+          new_version="$(node -p "require('./package.json').version")"
           tag="v$new_version"
 
           if git rev-parse "$tag" >/dev/null 2>&1; then
@@ -51,25 +53,109 @@ jobs:
           fi
 
           {
-            echo "old_version=$old_version"
             echo "version=$new_version"
             echo "tag=$tag"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Upload version file
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-version-file
+          path: package.json
+          if-no-files-found: error
+
+  build:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - nix-system: x86_64-linux
+            runner: ubuntu-24.04
+            bun-target: bun-linux-x64
+            artifact-platform: x86_64-linux
+          - nix-system: aarch64-linux
+            runner: ubuntu-24.04-arm
+            bun-target: bun-linux-arm64
+            artifact-platform: aarch64-linux
+          - nix-system: x86_64-darwin
+            runner: macos-15-intel
+            bun-target: bun-darwin-x64
+            artifact-platform: x86_64-darwin
+          - nix-system: aarch64-darwin
+            runner: macos-15
+            bun-target: bun-darwin-arm64
+            artifact-platform: aarch64-darwin
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Download version file
+        uses: actions/download-artifact@v4
+        with:
+          name: release-version-file
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v22
+
       - name: Check flake
         run: nix flake check --print-build-logs
 
-      - name: Build package
-        run: nix build --print-build-logs
+      - name: Build Nix package
+        run: nix build ".#packages.${{ matrix.nix-system }}.default" --print-build-logs
+
+      - name: Install Bun dependencies
+        run: nix develop --command bun install --frozen-lockfile --ignore-scripts
+
+      - name: Build standalone executable
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p package
+          nix develop --command bun build --compile --target="${{ matrix.bun-target }}" src/main.ts --outfile package/zetel
+          chmod +x package/zetel
+          ./package/zetel version
 
       - name: Package release asset
         shell: bash
         run: |
           set -euo pipefail
 
-          asset="zetel-${{ steps.version.outputs.version }}-x86_64-linux.tar.gz"
-          tar -C result -czf "$asset" .
+          asset="zetel-${{ needs.prepare.outputs.version }}-${{ matrix.artifact-platform }}.tar.gz"
+          tar -C package -czf "$asset" zetel
           echo "ASSET=$asset" >> "$GITHUB_ENV"
+
+      - name: Upload release asset
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-asset-${{ matrix.artifact-platform }}
+          path: ${{ env.ASSET }}
+          if-no-files-found: error
+
+  publish:
+    needs:
+      - prepare
+      - build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Download version file
+        uses: actions/download-artifact@v4
+        with:
+          name: release-version-file
+
+      - name: Download release assets
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-asset-*
+          path: release-assets
+          merge-multiple: true
 
       - name: Commit release version
         shell: bash
@@ -79,10 +165,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add package.json
-          git commit -m "chore(release): ${{ steps.version.outputs.tag }}"
-          git tag "${{ steps.version.outputs.tag }}"
+          git commit -m "chore(release): ${{ needs.prepare.outputs.tag }}"
+          git tag "${{ needs.prepare.outputs.tag }}"
           git push origin "HEAD:${GITHUB_REF_NAME}"
-          git push origin "${{ steps.version.outputs.tag }}"
+          git push origin "${{ needs.prepare.outputs.tag }}"
 
       - name: Create GitHub release
         env:
@@ -92,11 +178,11 @@ jobs:
           set -euo pipefail
 
           args=(
-            "${{ steps.version.outputs.tag }}"
-            "$ASSET"
+            "${{ needs.prepare.outputs.tag }}"
+            release-assets/*
             --verify-tag
-            --title "zetel ${{ steps.version.outputs.tag }}"
-            --notes "Release ${{ steps.version.outputs.tag }}"
+            --title "zetel ${{ needs.prepare.outputs.tag }}"
+            --notes "Release ${{ needs.prepare.outputs.tag }}"
           )
 
           if [[ "${{ inputs.prerelease }}" == "true" ]]; then

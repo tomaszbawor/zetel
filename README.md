@@ -56,6 +56,19 @@ that value.
 Run the `Release` workflow from GitHub Actions and choose `patch`, `minor`, or
 `major`. The workflow bumps `package.json`, builds the app with Nix, commits the
 version change, creates a `vX.Y.Z` tag, and publishes a GitHub release with the
-built Linux package attached.
+built platform packages attached.
+
+Release packages are standalone executables for:
+
+- `x86_64-linux`
+- `aarch64-linux`
+- `x86_64-darwin`
+- `aarch64-darwin`
+
+After downloading a package, extract it and run:
+
+```bash
+./zetel version
+```
 
 This project was created using `bun init` in bun v1.3.13. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
