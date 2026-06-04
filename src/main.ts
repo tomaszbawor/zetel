@@ -2,6 +2,9 @@
 import { BunRuntime, BunServices } from "@effect/platform-bun"
 import { Console, Effect } from "effect"
 import { Command, Flag } from "effect/unstable/cli"
+import packageJson from "../package.json" with { type: "json" }
+
+const appVersion = packageJson.version
 
 // --- greet subcommand ---
 const greet = Command.make(
@@ -44,7 +47,7 @@ const greet = Command.make(
 )
 
 // --- version subcommand ---
-const version = Command.make("version", {}, () => Console.log("zetel v1.0.0")).pipe(
+const version = Command.make("version", {}, () => Console.log(`zetel v${appVersion}`)).pipe(
   Command.withDescription("Print the current version"),
 )
 
@@ -55,6 +58,6 @@ const zetel = Command.make("zetel").pipe(
 )
 
 // --- run ---
-const program = Command.run(zetel, { version: "1.0.0" })
+const program = Command.run(zetel, { version: appVersion })
 
 BunRuntime.runMain(program.pipe(Effect.provide(BunServices.layer)))

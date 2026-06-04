@@ -42,4 +42,14 @@ To build the Nix package:
 nix build
 ```
 
+## Versioning and releases
+
+The app version is defined in `package.json`. The CLI and Nix package both read
+that value.
+
+Run the `Release` workflow from GitHub Actions and choose `patch`, `minor`, or
+`major`. The workflow bumps `package.json`, builds the app with Nix, commits the
+version change, creates a `vX.Y.Z` tag, and publishes a GitHub release with the
+built Linux package attached.
+
 This project was created using `bun init` in bun v1.3.13. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.

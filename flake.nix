@@ -8,6 +8,9 @@
   outputs =
     { self, nixpkgs }:
     let
+      packageJson = builtins.fromJSON (builtins.readFile ./package.json);
+      appVersion = packageJson.version;
+
       supportedSystems = [
         "x86_64-linux"
         "aarch64-linux"
@@ -25,7 +28,7 @@
 
           bunCache = pkgs.stdenvNoCC.mkDerivation {
             pname = "zetel-bun-cache";
-            version = "0.1.0";
+            version = appVersion;
 
             src = ./.;
             nativeBuildInputs = [ pkgs.bun ];
@@ -51,7 +54,7 @@
         {
           default = pkgs.stdenvNoCC.mkDerivation {
             pname = "zetel";
-            version = "0.1.0";
+            version = appVersion;
 
             src = ./.;
             nativeBuildInputs = [
