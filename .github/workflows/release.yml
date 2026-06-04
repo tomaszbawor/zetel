@@ -70,20 +70,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - nix-system: x86_64-linux
-            runner: ubuntu-24.04
+          - runner: ubuntu-24.04
             bun-target: bun-linux-x64
             artifact-platform: x86_64-linux
-          - nix-system: aarch64-linux
-            runner: ubuntu-24.04-arm
+          - runner: ubuntu-24.04-arm
             bun-target: bun-linux-arm64
             artifact-platform: aarch64-linux
-          - nix-system: x86_64-darwin
-            runner: macos-15-intel
+          - runner: macos-15-intel
             bun-target: bun-darwin-x64
             artifact-platform: x86_64-darwin
-          - nix-system: aarch64-darwin
-            runner: macos-15
+          - runner: macos-15
             bun-target: bun-darwin-arm64
             artifact-platform: aarch64-darwin
     runs-on: ${{ matrix.runner }}
@@ -96,17 +92,17 @@ jobs:
         with:
           name: release-version-file
 
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v22
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
 
-      - name: Check flake
-        run: nix flake check --print-build-logs
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --ignore-scripts
 
-      - name: Build Nix package
-        run: nix build ".#packages.${{ matrix.nix-system }}.default" --print-build-logs
+      - name: Check
+        run: bun run check
 
-      - name: Install Bun dependencies
-        run: nix develop --command bun install --frozen-lockfile --ignore-scripts
+      - name: Build
+        run: bun run build
 
       - name: Build standalone executable
         shell: bash
@@ -114,7 +110,7 @@ jobs:
           set -euo pipefail
 
           mkdir -p package
-          nix develop --command bun build --compile --target="${{ matrix.bun-target }}" src/main.ts --outfile package/zetel
+          bun build --compile --target="${{ matrix.bun-target }}" src/main.ts --outfile package/zetel
           chmod +x package/zetel
           ./package/zetel version
 
